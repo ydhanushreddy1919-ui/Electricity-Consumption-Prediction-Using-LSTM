@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="WattCast — train an LSTM neural network in your browser to forecast hourly electricity consumption." />
+    <title>WattCast · LSTM Electricity Consumption Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <script data-arena-recording="true">(function(){
+"use strict";
+var SK="__arena_rec",RRWEB_CDN="https://cdn.jsdelivr.net/npm/rrweb@2.0.0-alpha.4/dist/rrweb.min.js";
+var MAX_RECORDING_MS=600000,MAX_RRWEB_EVENTS=30000,MAX_INTERACTIONS=5000,MAX_CURSOR_POINTS=10000,recStopped=false;
+var stored=null;try{var raw=sessionStorage.getItem(SK);if(raw)stored=JSON.parse(raw);}catch(ex){}
+var meta=stored?stored.m||null:null,rrwebEvents=stored?stored.r||[]:[],rrwebStarted=false,startTime=stored?stored.st||Date.now():Date.now();
+var interactions=stored?stored.i||[]:[],cursorPath=stored?stored.c||[]:[],lastCursorSample=0,lastScrollSample=0;
+var pageHeight=document.documentElement.scrollHeight;
+var viewport={width:window.innerWidth,height:window.innerHeight};
+function isCapped(){if(recStopped)return true;if(Date.now()-startTime>=MAX_RECORDING_MS){recStopped=true;return true;}return false;}
+function persist(){try{var d=JSON.stringify({r:rrwebEvents,i:interactions,c:cursorPath,m:meta,st:startTime});sessionStorage.setItem(SK,d);}catch(ex){rrwebEvents=rrwebEvents.slice(Math.floor(rrwebEvents.length/2));try{sessionStorage.setItem(SK,JSON.stringify({r:rrwebEvents,i:interactions,c:cursorPath,m:meta,st:startTime}));}catch(ex2){}}}
+setInterval(persist,5000);
+window.addEventListener("resize",function(){viewport={width:window.innerWidth,height:window.innerHeight};pageHeight=document.documentElement.scrollHeight;});
+document.addEventListener("click",function(e){if(isCapped()||interactions.length>=MAX_INTERACTIONS)return;var el=e.target;var tag=el.tagName?el.tagName.toLowerCase():"";var text=(el.textContent||"").trim().substring(0,80);var classes=el.className&&typeof el.className==="string"?el.className.substring(0,120):"";interactions.push({type:"click",t:Date.now()-startTime,x:Math.round(e.clientX),y:Math.round(e.clientY),element:{tag:tag,text:text,classes:classes}});},true);
+window.addEventListener("scroll",function(){if(isCapped()||interactions.length>=MAX_INTERACTIONS)return;var now=Date.now();if(now-lastScrollSample<200)return;lastScrollSample=now;var scrollY=Math.round(window.scrollY||window.pageYOffset||0);var depthPct=pageHeight>viewport.height?Math.min(100,Math.round(((scrollY+viewport.height)/pageHeight)*100)):100;interactions.push({type:"scroll",t:now-startTime,y:scrollY,depth_pct:depthPct});},{passive:true});
+document.addEventListener("mousemove",function(e){if(isCapped()||cursorPath.length>=MAX_CURSOR_POINTS)return;var now=Date.now();if(now-lastCursorSample<250)return;lastCursorSample=now;cursorPath.push([Math.round(e.clientX),Math.round(e.clientY),now-startTime]);},{passive:true});
+document.addEventListener("keydown",function(e){if(isCapped()||interactions.length>=MAX_INTERACTIONS)return;if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA"))return;interactions.push({type:"keydown",t:Date.now()-startTime,key:e.key});},true);
+function buildAnalytics(){if(!meta)return null;var ph=document.documentElement.scrollHeight;var maxScroll=0,clickElements={},firstClick=null,firstScroll=null,totalDistance=0;for(var i=0;i<interactions.length;i++){var ev=interactions[i];if(ev.type==="scroll"){if(ev.depth_pct>maxScroll)maxScroll=ev.depth_pct;if(!firstScroll)firstScroll=ev.t;}if(ev.type==="click"){if(!firstClick)firstClick=ev.t;var key=ev.element.tag+":"+ev.element.text.substring(0,30);clickElements[key]=true;}}for(var j=1;j<cursorPath.length;j++){var dx=cursorPath[j][0]-cursorPath[j-1][0];var dy=cursorPath[j][1]-cursorPath[j-1][1];totalDistance+=Math.sqrt(dx*dx+dy*dy);}var duration=Date.now()-startTime;var clickHeatmap=[];for(var k=0;k<interactions.length;k++){if(interactions[k].type==="click")clickHeatmap.push([interactions[k].x,interactions[k].y]);}return{generation_id:meta.generationId,tournament_id:meta.tournamentId,started_at:new Date(startTime).toISOString(),ended_at:new Date().toISOString(),duration_ms:duration,viewport:viewport,page_height:ph,interactions:interactions,cursor_path:cursorPath,click_heatmap:clickHeatmap,summary:{total_clicks:clickHeatmap.length,total_scrolls:interactions.filter(function(e){return e.type==="scroll";}).length,max_scroll_depth_pct:maxScroll,unique_elements_clicked:Object.keys(clickElements).length,time_to_first_click_ms:firstClick,time_to_first_scroll_ms:firstScroll,cursor_distance_px:Math.round(totalDistance),active_time_ms:duration}};}
+function loadRrweb(){if(rrwebStarted)return;rrwebStarted=true;var s=document.createElement("script");s.src=RRWEB_CDN;s.onload=function(){var rec=(window.rrweb&&window.rrweb.record)||window.rrwebRecord;if(!rec)return;rec({emit:function(event){if(rrwebEvents.length>=MAX_RRWEB_EVENTS||isCapped())return;rrwebEvents.push(event);}});};s.onerror=function(){};document.head.appendChild(s);}
+window.addEventListener("message",function(e){if(!e.data||typeof e.data.type!=="string")return;if(e.data.type==="arena:init"){if(!meta)startTime=Date.now();meta={generationId:e.data.generationId||e.data.modelId,tournamentId:e.data.tournamentId};persist();loadRrweb();if(e.source)e.source.postMessage({type:"arena:init-ack",generationId:meta.generationId},"*");}if(e.data.type==="arena:flush"){var resp={type:"arena:recording-data",generationId:meta?meta.generationId:null,rrwebEvents:rrwebEvents,analytics:buildAnalytics()};try{sessionStorage.removeItem(SK);}catch(ex){}if(e.source)e.source.postMessage(resp,"*");}});
+loadRrweb();
+})();</script>
+  <script data-arena-views="true">(function(){var isTop=false;try{isTop=window.self===window.top;}catch(e){}if(!isTop)return;window.__ARENA_META={generationId:"qwen3.8-max",tournamentId:"8b94c1c7-5e25-42fc-943e-03cfbde4132d"};var payload={tournamentId:"8b94c1c7-5e25-42fc-943e-03cfbde4132d",modelId:"qwen3.8-max"};try{var r=document.referrer;if(r){var u=new URL(r);payload.referrerDomain=u.hostname;}}catch(e){}try{var vid=null;try{vid=localStorage.getItem('arena_vid');}catch(e){}if(!vid){vid=typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)).slice(0,32);try{localStorage.setItem('arena_vid',vid);}catch(e){}}if(vid)payload.viewerId=vid;}catch(e){}try{fetch("https://www.designarena.ai/api/agon/page-views",{"method":"POST","headers":{"Content-Type":"application/json"},"body":JSON.stringify(payload),"keepalive":true});}catch(e){}})();</script>
+</head>
+  <body>
+    <div class="app">
+      <!-- ======================= HEADER ======================= -->
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+              <path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z" fill="currentColor" />
+            </svg>
+          </div>
+          <div>
+            <h1>WattCast</h1>
+            <p>LSTM electricity consumption forecasting · runs entirely in your browser</p>
+          </div>
+        </div>
+        <div class="pills">
+          <span class="pill" id="statusData">no data</span>
+          <span class="pill pill-model" id="statusModel">model · idle</span>
+        </div>
+      </header>
+
+      <main class="layout">
+        <!-- ======================= SIDEBAR ======================= -->
+        <aside class="sidebar">
+          <section class="panel">
+            <h2><span class="step">1</span> Dataset</h2>
+            <div class="field">
+              <label for="days">Days of history (hourly)</label>
+              <input type="number" id="days" value="60" min="14" max="365" step="1" />
+            </div>
+            <div class="btn-row">
+              <button id="generateBtn" class="btn btn-ghost">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.6-6.3M21 3v6h-6"/></svg>
+                Generate data
+              </button>
+              <button id="uploadBtn" class="btn btn-ghost">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0 4 4m-4-4L8 8M4 20h16"/></svg>
+                Upload CSV
+              </button>
+              <input type="file" id="csvFile" accept=".csv,.txt,text/csv,text/plain" hidden />
+            </div>
+            <p class="hint">
+              Synthetic meter readings include daily peaks, weekend dips, seasonal drift and noise.
+              CSV: one value per line, or <code>timestamp,value</code>.
+            </p>
+          </section>
+
+          <section class="panel">
+            <h2><span class="step">2</span> LSTM model</h2>
+            <div class="param-grid">
+              <div class="field">
+                <label for="lookback">Lookback (h)</label>
+                <input type="number" id="lookback" value="48" min="6" max="168" step="1" />
+              </div>
+              <div class="field">
+                <label for="units">LSTM units</label>
+                <input type="number" id="units" value="32" min="8" max="128" step="4" />
+              </div>
+              <div class="field">
+                <label for="epochs">Epochs</label>
+                <input type="number" id="epochs" value="30" min="1" max="200" step="1" />
+              </div>
+              <div class="field">
+                <label for="batchSize">Batch size</label>
+                <input type="number" id="batchSize" value="32" min="8" max="256" step="8" />
+              </div>
+              <div class="field field-wide">
+                <label for="lr">Learning rate</label>
+                <input type="number" id="lr" value="0.005" min="0.0001" max="0.1" step="0.001" />
+              </div>
+            </div>
+            <button id="trainBtn" class="btn btn-primary btn-block">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7L8 5Z"/></svg>
+              Train model
+            </button>
+            <div class="progress">
+              <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+              <span class="progress-label" id="progressLabel">idle</span>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2><span class="step">3</span> Forecast</h2>
+            <div class="field">
+              <label for="horizon">Horizon (hours ahead)</label>
+              <input type="number" id="horizon" value="48" min="1" max="336" step="1" />
+            </div>
+            <button id="predictBtn" class="btn btn-ghost btn-block">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-6 4 3 6-8M18 6h4v4"/></svg>
+              Predict consumption
+            </button>
+          </section>
+
+          <button id="pipelineBtn" class="btn btn-accent btn-block">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z"/></svg>
+            Auto-run full pipeline
+          </button>
+        </aside>
+
+        <!-- ======================= CONTENT ======================= -->
+        <section class="content">
+          <div class="stats">
+            <div class="stat">
+              <span class="stat-label">MAE</span>
+              <span class="stat-value" id="statMae">—</span>
+              <span class="stat-unit">kWh</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">RMSE</span>
+              <span class="stat-value" id="statRmse">—</span>
+              <span class="stat-unit">kWh</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">MAPE</span>
+              <span class="stat-value" id="statMape">—</span>
+              <span class="stat-unit">%</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">R² score</span>
+              <span class="stat-value" id="statR2">—</span>
+              <span class="stat-unit">test set</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Consumption &amp; forecast</h3>
+              <span class="card-sub">hourly kWh · 80/20 train/test split</span>
+            </div>
+            <div class="chart-wrap chart-main">
+              <canvas id="mainChart"></canvas>
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div class="card">
+              <div class="card-head">
+                <h3>Training loss</h3>
+                <span class="card-sub">MSE · normalized units</span>
+              </div>
+              <div class="chart-wrap chart-loss">
+                <canvas id="lossChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head">
+                <h3>Architecture</h3>
+                <span class="card-sub">tf.layers</span>
+              </div>
+              <div id="modelSummary" class="summary">
+                <p class="summary-empty">Configure hyperparameters and press <strong>Train model</strong> — the layer summary will appear here.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Console</h3>
+              <span class="card-sub">training log</span>
+            </div>
+            <div id="log" class="console" aria-live="polite"></div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        Everything runs locally — TensorFlow.js (WebGL) trains the LSTM on your device. No data leaves the browser.
+      </footer>
+    </div>
+
+    <script type="module" src="/script.js"></script>
+  </body>
+</html>
